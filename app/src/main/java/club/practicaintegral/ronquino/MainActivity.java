@@ -255,6 +255,14 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface public int android() { return Build.VERSION.SDK_INT; }
 
+        /** La pantalla de la noche se puede girar en horizontal (para ver el gráfico en grande); las demás, siempre en vertical.
+         *  Respeta el bloqueo de giro del móvil: si está puesto, Android enseña su botoncito para girar. */
+        @JavascriptInterface public void girar(boolean libre) {
+            runOnUiThread(() -> setRequestedOrientation(libre
+                ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+                : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
+        }
+
         // ---- Alarmas que suenan con la app cerrada (las programa el reloj de Android) ----
         /** La web manda su lista de alarmas: [{id, on, hora, tono, sub}] */
         @JavascriptInterface public void setAlarmas(String json) { Alarmas.guardar(MainActivity.this, json); }
