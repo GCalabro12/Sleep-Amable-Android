@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace 'club.practicaintegral.ronquino'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId 'club.practicaintegral.ronquino'
         minSdk 26
-        targetSdk 34
+        targetSdk 36 // Google Play pide Android 16 (API 36) para apps nuevas desde el 31-08-2026
         // La compilación automática de GitHub pone el número de versión
         versionCode Integer.parseInt(System.getenv('VERSION_CODE') ?: '1')
         versionName System.getenv('VERSION_NAME') ?: '1.0'

@@ -60,6 +60,8 @@ public class AlarmaActivity extends Activity {
         super.onCreate(b);
         actual = new WeakReference<>(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) { setShowWhenLocked(true); setTurnScreenOn(true); }
+        if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+            android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> { /* se apaga o pospone con sus botones */ });
         else getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON | WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
@@ -361,5 +363,18 @@ public class AlarmaActivity extends Activity {
     private int dp(int v) { return Math.round(v * getResources().getDisplayMetrics().density); }
 
     @Override public void onBackPressed() { /* se apaga o pospone con sus botones */ }
+
+    @Override public void setContentView(View v) {
+        super.setContentView(v);
+        if (Build.VERSION.SDK_INT >= 35) {
+            final int l = v.getPaddingLeft(), t = v.getPaddingTop(), r = v.getPaddingRight(), bo = v.getPaddingBottom();
+            v.setOnApplyWindowInsetsListener((vista, ins) -> {
+                android.graphics.Insets b = ins.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
+                vista.setPadding(l + b.left, t + b.top, r + b.right, bo + b.bottom);
+                return android.view.WindowInsets.CONSUMED;
+            });
+            v.requestApplyInsets();
+        }
+    }
     @Override protected void onDestroy() { pararPasos(); h.removeCallbacksAndMessages(null); super.onDestroy(); }
 }

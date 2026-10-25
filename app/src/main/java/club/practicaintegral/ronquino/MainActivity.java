@@ -84,6 +84,15 @@ public class MainActivity extends Activity {
         cargando.setBackgroundColor(0xFF0B1020);
         root.addView(cargando, new FrameLayout.LayoutParams(-1, -1));
         setContentView(root);
+        if (Build.VERSION.SDK_INT >= 35) root.setOnApplyWindowInsetsListener((v, ins) -> {
+            android.graphics.Insets b = ins.getInsets(android.view.WindowInsets.Type.systemBars() | android.view.WindowInsets.Type.displayCutout());
+            android.graphics.Insets k = ins.getInsets(android.view.WindowInsets.Type.ime());
+            v.setPadding(b.left, b.top, b.right, Math.max(b.bottom, k.bottom));
+            return android.view.WindowInsets.CONSUMED;
+        });
+        // Android 13+: el botón «atrás» llega por OnBackInvokedCallback (con la API 36, onBackPressed ya no se llama)
+        if (Build.VERSION.SDK_INT >= 33) getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+            android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT, this::atras);
 
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
@@ -213,7 +222,9 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public void onBackPressed() {
+    public void onBackPressed() { atras(); }
+
+    private void atras() {
         // La web decide: cerrar la hoja o volver al menú. Si ya está en el menú, la app se va al fondo.
         web.evaluateJavascript("(function(){try{return window.atrasNativo ? atrasNativo() : false}catch(e){return false}})()", v -> {
             if (!"true".equals(v)) moveTaskToBack(true);
@@ -449,6 +460,12 @@ public class MainActivity extends Activity {
         }
 
         /** Compartir una grabación (WhatsApp, correo, Drive…). La web la manda en base64. */
+        /** Recomendar la app: abre el menú de compartir de Android con el texto (WhatsApp, correo…). */
+        @JavascriptInterface public void compartirTexto(String texto) {
+            runOnUiThread(() -> abrir(Intent.createChooser(new Intent(Intent.ACTION_SEND).setType("text/plain")
+                .putExtra(Intent.EXTRA_TEXT, texto), "Recomendar Amable Sleep")));
+        }
+
         @JavascriptInterface public boolean compartir(String nombre, String base64) {
             try {
                 String limpio = nombre.replaceAll("[^A-Za-z0-9_.-]", "_");

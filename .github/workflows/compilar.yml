@@ -21,7 +21,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: '8.7'
+          gradle-version: '8.11.1'
 
       - name: Versión (la misma numeración que la web)
         run: echo "VERSION_NAME=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_ENV"
@@ -34,10 +34,12 @@ jobs:
           KEYSTORE_FILE: ${{ runner.temp }}/clave.p12
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
-        run: gradle assembleRelease --no-daemon --stacktrace
+        run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
 
       - name: Preparar APK
-        run: cp app/build/outputs/apk/release/app-release.apk SleepAmable.apk
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk SleepAmable.apk
+          cp app/build/outputs/bundle/release/app-release.aab SleepAmable.aab
 
       - name: Publicar descarga
         uses: softprops/action-gh-release@v2
@@ -46,6 +48,9 @@ jobs:
           name: Amable Sleep v${{ env.VERSION_NAME }}
           body: |
             Descarga **SleepAmable.apk** en el móvil y ábrelo para instalar o actualizar.
+            SleepAmable.aab es el paquete para subir a Google Play.
             Enlace fijo a la última versión: https://github.com/${{ github.repository }}/releases/latest/download/SleepAmable.apk
-          files: SleepAmable.apk
+          files: |
+            SleepAmable.apk
+            SleepAmable.aab
           make_latest: true
