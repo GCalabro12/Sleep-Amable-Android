@@ -79,18 +79,19 @@ final class Aviso {
     /** Lo dice por donde suene el móvil (altavoz o auriculares): la voz de Luna cuando la de Gemini no llega. */
     static void hablar(Context c, String texto) {
         preparar(c);
-        if (listo) tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "luna");
+        if (listo) { tts.setSpeechRate(1f); tts.setPitch(1f); tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "luna"); }
         else pendiente = texto;
     }
 
     static void callar() { if (tts != null) tts.stop(); pendiente = null; }
 
-    /** Para que el aviso se oiga: el volumen multimedia al menos a 3/4 mientras habla; luego vuelve a como estaba. */
+    /** Para que el aviso se oiga: el volumen multimedia al menos al 60 % mientras habla; luego vuelve a como estaba.
+     *  (Antes 3/4: con auriculares pasaba del «nivel seguro» y Android preguntaba «¿Subir el volumen por encima del nivel seguro?».) */
     private static void subirVolumen(Context c) {
         try {
             AudioManager am = c.getSystemService(AudioManager.class);
             int max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC), cur = am.getStreamVolume(AudioManager.STREAM_MUSIC);
-            int min = (int) Math.ceil(max * 0.75);
+            int min = (int) Math.floor(max * 0.6);
             if (cur < min) { if (volAntes < 0) volAntes = cur; am.setStreamVolume(AudioManager.STREAM_MUSIC, min, 0); }
         } catch (RuntimeException ignored) {}
     }
@@ -102,11 +103,16 @@ final class Aviso {
     }
 
     /** Lo dice solo si hay auriculares; sin ellos no suena nada y devuelve false. */
-    static boolean decir(Context c, String texto) {
+    static boolean decir(Context c, String texto) { return decir(c, texto, 1f, 1f); }
+
+    /** Igual, más despacio y un poco más grave (más tranquilo): «Prueba de audífonos». */
+    static boolean decirDespacio(Context c, String texto) { return decir(c, texto, 0.8f, 0.95f); }
+
+    private static boolean decir(Context c, String texto, float velocidad, float tono) {
         if (!auriculares(c)) return false;
         preparar(c);
         subirVolumen(c);
-        if (listo) tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "aviso");
+        if (listo) { tts.setSpeechRate(velocidad); tts.setPitch(tono); tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "aviso"); }
         else pendiente = texto;
         return true;
     }

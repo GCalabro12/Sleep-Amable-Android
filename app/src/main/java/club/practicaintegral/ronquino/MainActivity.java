@@ -425,6 +425,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean auriculares() { return Aviso.auriculares(MainActivity.this); }
         @JavascriptInterface public void prepararVoz() { runOnUiThread(() -> Aviso.preparar(MainActivity.this)); }
         @JavascriptInterface public boolean decir(String texto) { return Aviso.decir(MainActivity.this, texto); }
+        @JavascriptInterface public boolean decirDespacio(String texto) { return Aviso.decirDespacio(MainActivity.this, texto); }
         /** Voz del móvil para Luna (si la voz de Gemini no llega a tiempo). */
         @JavascriptInterface public void hablar(String texto) { runOnUiThread(() -> Aviso.hablar(MainActivity.this, texto)); }
         @JavascriptInterface public void callar() { Aviso.callar(); }
