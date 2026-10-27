@@ -1,0 +1,58 @@
+name: Grabar el vídeo de permisos (Google Play)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Compilar la versión de pruebas
+        run: gradle assembleDebug --no-daemon
+
+      - name: Herramientas (prueba y montaje)
+        run: |
+          pip install websocket-client
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-dejavu-core
+
+      - name: Activar KVM (emulador rápido)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Grabar en Android 14
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -no-boot-anim
+          disable-animations: false
+          script: bash prueba/video.sh
+
+      - name: Montar el vídeo
+        if: always()
+        run: python3 prueba/montar.py clips video-declaracion-permisos.mp4
+
+      - name: Vídeo y escenas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: |
+            video-declaracion-permisos.mp4
+            clips/*.mp4
+            captura-*.png
