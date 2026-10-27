@@ -68,8 +68,17 @@ echo "Sigue escuchando tras apagar: $(J "document.getElementById('listen').class
 
 # (fuera de cámara) fin de la noche de prueba: se borra, es de 1 minuto
 J "$DESPIERTA"; J "document.getElementById('stopBtn').click(); 'ok'"
-for i in $(seq 1 10); do sleep 1.5; [ "$(J "document.getElementById('ask').hidden")" = false ] && break; done
-J "document.getElementById('askA').click(); 'borrada'"; sleep 3
+# Pueden salir dos ventanas: «lo que queda por deshacer» y «¿Guardar esta grabación?» (se borra: era de prueba)
+for i in $(seq 1 16); do
+  sleep 1.5
+  T_ASK=$(J "document.getElementById('ask').hidden ? '' : document.getElementById('askT').textContent")
+  echo "ventana: $T_ASK"
+  case "$T_ASK" in
+    *Guardar*) J "document.getElementById('askA').click(); 'borrada'"; sleep 3; break ;;
+    '""'|'') ;;
+    *) J "document.getElementById('askA').click(); 'cerrada'" ;;
+  esac
+done
 J "$LIMPIA"
 J "(() => { const id = +localStorage.getItem('demo-id'); document.querySelectorAll('.night').forEach(x => { if (x._id === id && x.offsetParent) x.setAttribute('data-demo', '1'); }); return !!document.querySelector('[data-demo]'); })()"
 
@@ -90,7 +99,7 @@ T '#musBody [data-c]'; sleep 3
 adb shell input keyevent KEYCODE_SLEEP; sleep 3
 adb shell input keyevent KEYCODE_WAKEUP; sleep 1.5
 PERSIANA; sleep 4
-adb shell cmd statusbar collapse; adb shell wm dismiss-keyguard; sleep 2
+adb shell cmd statusbar collapse; adb shell wm dismiss-keyguard; sleep 0.5; J "$LIMPIA"; sleep 1.5
 parar 5
 adb shell dumpsys activity services $PKG | grep -i "isForeground\|types=" | head -5
 J "document.querySelector('#musBody .cuna.on')?.click(); 'parada'"
@@ -103,7 +112,7 @@ sleep 50
 grabar 6
 for i in $(seq 1 40); do sleep 1; [ "$(adb shell dumpsys activity activities | grep -c 'AlarmaActivity')" != 0 ] && break; done
 if ! kill -0 $REC 2>/dev/null; then grabar 6; fi   # (si la pantalla apagada cortó la grabación)
-sleep 6
+sleep 4
 XY=$(python3 prueba/ui.py tap "Apagar"); [ -n "$XY" ] && adb shell input tap $XY
 sleep 3
 parar 6

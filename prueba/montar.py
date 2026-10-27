@@ -21,6 +21,9 @@ ESCENAS = [
 ]
 
 
+DURA = [9, 8, 12, 12, 13, 9]  # segundos de cada escena en el vídeo (unos 60 s en total)
+
+
 def rotulo(en, es, f):
     t = textwrap.fill(en, 38) + '\n\n' + textwrap.fill(es, 40)
     open(f, 'w', encoding='utf-8').write(t)
@@ -44,8 +47,10 @@ for i, (en, es) in enumerate(ESCENAS, 1):
     if not os.path.exists(clip):
         print('falta', clip); continue
     f = rotulo(en, es, f'montaje/t{i}.txt')
-    vf = f'tpad=stop_mode=clone:stop_duration=1.5,fps=30,scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,' + TXT.format(f, 'h-text_h-150')
-    ff('-i', clip, '-vf', vf, *COD, f'montaje/p{i}.mp4')
+    d = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', clip], capture_output=True, text=True).stdout or 0) + 1.5
+    t = DURA[i - 1]; k = min(2.0, d / t) if d > t else 1.0   # más largo de lo previsto: un poco más rápido, y se corta
+    vf = f'tpad=stop_mode=clone:stop_duration=1.5,setpts=PTS/{k:.3f},fps=30,scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,' + TXT.format(f, 'h-text_h-150')
+    ff('-i', clip, '-vf', vf, '-t', str(t), *COD, f'montaje/p{i}.mp4')
     partes.append(f'montaje/p{i}.mp4')
 open('montaje/lista.txt', 'w').write(''.join(f"file '{os.path.basename(p)}'\n" for p in partes))
 ff('-f', 'concat', '-safe', '0', '-i', 'montaje/lista.txt', '-c', 'copy', '-movflags', '+faststart', OUT)
