@@ -90,7 +90,8 @@ public class Alarmas {
     static void posponer(Context c, String tono, int sub, int min, String reto, String cod) {
         int[] ops = opcionesPosponer(c); min = Math.min(Math.max(1, min), ops[ops.length - 1]); // nunca más de lo que toca
         contarPospuesta(c);
-        programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, sub, reto, cod);
+        // al volver a sonar ya no sube despacio: si era progresiva, sube en 5 segundos
+        programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, sub > 0 ? 5 : 0, reto, cod);
     }
 
     // Cada vez que se pospone, menos tiempo: la 1.ª vez 1, 3, 5 o 9 min; la 2.ª, 1 o 3; después, solo 1
