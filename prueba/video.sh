@@ -80,11 +80,12 @@ for i in $(seq 1 16); do
   esac
 done
 J "$LIMPIA"
-J "(() => { const id = +localStorage.getItem('demo-id'); document.querySelectorAll('.night').forEach(x => { if (x._id === id && x.offsetParent) x.setAttribute('data-demo', '1'); }); return !!document.querySelector('[data-demo]'); })()"
 
 # ---------- 4. Por la mañana: el gráfico y las grabaciones ----------
 grabar 4
-sleep 1.5; T '[data-demo]'; sleep 4
+sleep 1.5; T '#histDet > summary'; sleep 2   # abre el historial de grabaciones
+J "(() => { const id = +localStorage.getItem('demo-id'); document.querySelectorAll('#nights .night').forEach(x => { if (x._id === id) x.setAttribute('data-demo', '1'); }); return !!document.querySelector('#nights [data-demo]'); })()"
+T '#nights [data-demo]'; sleep 4
 T '#tlTit'; sleep 3
 adb shell input swipe 540 1700 540 1000 600; sleep 4
 parar 4
@@ -96,8 +97,6 @@ grabar 5
 sleep 1.5; T '#menu [data-go=alarma]'; sleep 2
 T '#musDet > summary'; sleep 2
 T '#musBody [data-c]'; sleep 3
-adb shell input keyevent KEYCODE_SLEEP; sleep 3
-adb shell input keyevent KEYCODE_WAKEUP; sleep 1.5
 PERSIANA; sleep 4
 adb shell cmd statusbar collapse; adb shell wm dismiss-keyguard; sleep 0.5; J "$LIMPIA"; sleep 1.5
 parar 5
