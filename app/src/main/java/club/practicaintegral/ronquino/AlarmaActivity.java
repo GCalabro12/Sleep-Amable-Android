@@ -81,7 +81,7 @@ public class AlarmaActivity extends Activity {
         LinearLayout fila = new LinearLayout(this);
         fila.setOrientation(LinearLayout.HORIZONTAL);
         fila.setGravity(Gravity.CENTER);
-        for (int m : new int[]{1, 3, 5, 9}) fila.addView(boton(m + " min", 0xFF312E81, 0xFFE0E7FF, 17, () -> pulsar("POSPONER", m), true));
+        for (int m : Alarmas.opcionesPosponer(this)) fila.addView(boton(m + " min", 0xFF312E81, 0xFFE0E7FF, 17, () -> pulsar("POSPONER", m), true)); // cada vez, menos
         col.addView(fila, new LinearLayout.LayoutParams(-1, -2));
 
         boolean reforzada = !AlarmaService.retoActual.isEmpty();

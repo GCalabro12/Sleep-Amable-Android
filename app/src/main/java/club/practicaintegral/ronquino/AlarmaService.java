@@ -38,7 +38,7 @@ public class AlarmaService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String accion = intent != null ? intent.getAction() : null;
-        if ("APAGAR".equals(accion)) { parar(); return START_NOT_STICKY; }
+        if ("APAGAR".equals(accion)) { Alarmas.olvidarPospuestas(this); parar(); return START_NOT_STICKY; }
         if ("DISCRETO".equals(accion)) { discreto(); return START_NOT_STICKY; }
         if ("POSPONER".equals(accion)) { Alarmas.posponer(this, tonoActual, subActual, intent.getIntExtra("min", 9), retoActual, codActual); parar(); return START_NOT_STICKY; }
 
@@ -100,12 +100,13 @@ public class AlarmaService extends Service {
 
     /** Posponer siempre; «Apagar» desde el aviso solo si la alarma no es reforzada (si no, se apaga haciendo la prueba). */
     private void acciones(Notification.Builder nb) {
-        nb.addAction(new Notification.Action.Builder(null, "Posponer 9 min", accionPI("POSPONER", 3)).build());
-        if (retoActual.isEmpty()) nb.addAction(new Notification.Action.Builder(null, "Apagar", accionPI("APAGAR", 4)).build());
+        int[] ops = Alarmas.opcionesPosponer(this); int max = ops[ops.length - 1]; // 9, luego 3, luego 1
+        nb.addAction(new Notification.Action.Builder(null, "Posponer " + max + " min", accionPI("POSPONER", 3, max)).build());
+        if (retoActual.isEmpty()) nb.addAction(new Notification.Action.Builder(null, "Apagar", accionPI("APAGAR", 4, 0)).build());
     }
 
-    private PendingIntent accionPI(String accion, int code) {
-        return PendingIntent.getService(this, code, new Intent(this, AlarmaService.class).setAction(accion).putExtra("min", 9),
+    private PendingIntent accionPI(String accion, int code, int min) {
+        return PendingIntent.getService(this, code, new Intent(this, AlarmaService.class).setAction(accion).putExtra("min", min),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
