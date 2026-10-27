@@ -26,6 +26,7 @@ for p in RECORD_AUDIO POST_NOTIFICATIONS; do adb shell pm grant $PKG android.per
 adb shell appops set $PKG SYSTEM_ALERT_WINDOW allow || true
 adb shell settings put system show_touches 1          # se ve dónde toca el dedo
 adb shell settings put system screen_off_timeout 600000
+adb shell settings put secure immersive_mode_confirmations confirmed   # sin el aviso «Viewing full screen»
 adb shell svc power stayon true
 adb shell cmd uimode night yes || true
 adb shell am start -n $PKG/.MainActivity
@@ -34,7 +35,9 @@ conectar
 J "['ronquino-tour-visto','ronquino-permisos-vistos','ronquino-mic-ok'].forEach(k => localStorage.setItem(k, '1')); localStorage.setItem('ronquino-pais', 'España'); localStorage.setItem('ronquino-compartir', '0'); 'ok'"
 echo "Noche de ejemplo: $(J "$(cat prueba/demo.js)")"
 J "location.reload(); 'ok'"; sleep 3; conectar
-LIMPIA="document.getElementById('splash')?.remove(); const cp = document.getElementById('cuentaPanel'); if (cp) cp.hidden = true; window.scrollTo(0, 0); 'ok'"
+LIMPIA="(() => { document.getElementById('splash')?.remove(); for (const id of ['cuentaPanel', 'apkBanner']) { const x = document.getElementById(id); if (x) x.hidden = true; } window.scrollTo(0, 0); return 'ok'; })()"
+DESPIERTA="document.getElementById('listen').dispatchEvent(new PointerEvent('pointerdown', {bubbles: true})); 'ok'"   # la pantalla de monitoreo se oscurece a los 15 s
+PERSIANA() { adb shell input swipe 540 5 540 1300 450; sleep 1.2; adb shell input swipe 540 600 540 1800 450; }   # baja la persiana de avisos con el dedo
 sleep 6; J "$LIMPIA"; sleep 2
 J "window.alert = m => { window.__alertas = (window.__alertas || []).concat(m); }; 'ok'"
 
@@ -47,24 +50,28 @@ echo "Escuchando: $(J "document.getElementById('listen').classList.contains('on'
 adb shell dumpsys activity services $PKG | grep -i "isForeground\|foregroundServiceType\|types=" | head -5
 
 # ---------- 2. El aviso del servicio en primer plano (micrófono) ----------
+J "$DESPIERTA"
 grabar 2
-sleep 1; adb shell cmd statusbar expand-notifications; sleep 5
+sleep 1; PERSIANA; sleep 5
 adb shell cmd statusbar collapse; sleep 1.5
 parar 2
 
 # ---------- 3. Pantalla apagada: sigue escuchando ----------
+J "$DESPIERTA"
 grabar 3
-sleep 1; adb shell input keyevent KEYCODE_SLEEP; sleep 4
-adb shell input keyevent KEYCODE_WAKEUP; sleep 3
-adb shell cmd statusbar expand-notifications; sleep 3.5
+sleep 1.5; adb shell input keyevent KEYCODE_SLEEP; sleep 4
+adb shell input keyevent KEYCODE_WAKEUP; sleep 1; J "$DESPIERTA"; sleep 2.5
+PERSIANA; sleep 3.5
 adb shell cmd statusbar collapse; adb shell wm dismiss-keyguard; sleep 2.5
 parar 3
 echo "Sigue escuchando tras apagar: $(J "document.getElementById('listen').classList.contains('on')")"
 
 # (fuera de cámara) fin de la noche de prueba: se borra, es de 1 minuto
-T '#stopBtn'; sleep 4; T '#askA'; sleep 3
+J "$DESPIERTA"; J "document.getElementById('stopBtn').click(); 'ok'"
+for i in $(seq 1 10); do sleep 1.5; [ "$(J "document.getElementById('ask').hidden")" = false ] && break; done
+J "document.getElementById('askA').click(); 'borrada'"; sleep 3
 J "$LIMPIA"
-J "(() => { document.querySelector('#menu') && document.querySelectorAll('.night').forEach(x => { if (x._id === window.__demoId) x.setAttribute('data-demo', '1'); }); return !!document.querySelector('[data-demo]'); })()"
+J "(() => { const id = +localStorage.getItem('demo-id'); document.querySelectorAll('.night').forEach(x => { if (x._id === id && x.offsetParent) x.setAttribute('data-demo', '1'); }); return !!document.querySelector('[data-demo]'); })()"
 
 # ---------- 4. Por la mañana: el gráfico y las grabaciones ----------
 grabar 4
@@ -82,7 +89,7 @@ T '#musDet > summary'; sleep 2
 T '#musBody [data-c]'; sleep 3
 adb shell input keyevent KEYCODE_SLEEP; sleep 3
 adb shell input keyevent KEYCODE_WAKEUP; sleep 1.5
-adb shell cmd statusbar expand-notifications; sleep 4
+PERSIANA; sleep 4
 adb shell cmd statusbar collapse; adb shell wm dismiss-keyguard; sleep 2
 parar 5
 adb shell dumpsys activity services $PKG | grep -i "isForeground\|types=" | head -5

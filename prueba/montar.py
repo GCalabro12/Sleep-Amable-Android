@@ -44,7 +44,7 @@ for i, (en, es) in enumerate(ESCENAS, 1):
     if not os.path.exists(clip):
         print('falta', clip); continue
     f = rotulo(en, es, f'montaje/t{i}.txt')
-    vf = f'fps=30,scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,' + TXT.format(f, 'h-text_h-150')
+    vf = f'tpad=stop_mode=clone:stop_duration=1.5,fps=30,scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2:color=black,' + TXT.format(f, 'h-text_h-150')
     ff('-i', clip, '-vf', vf, *COD, f'montaje/p{i}.mp4')
     partes.append(f'montaje/p{i}.mp4')
 open('montaje/lista.txt', 'w').write(''.join(f"file '{os.path.basename(p)}'\n" for p in partes))

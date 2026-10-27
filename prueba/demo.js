@@ -52,6 +52,6 @@
   };
   for (const e of evs) await DB.put('eventos', {noche: n.id, off: e.off, dur: e.dur, tipo: e.tipo,
     sn: e.tipo === 'ronquido' ? e.conf : .05, vo: e.tipo === 'voz' ? e.conf : .03, br: 0, top: e.tipo === 'otro' ? 'Door' : null, peak: .4, est: false, blob: wav(e.dur)});
-  window.__demoId = n.id;
+  localStorage.setItem('demo-id', String(n.id));
   return n.id;
 })()
