@@ -274,6 +274,28 @@ public class MainActivity extends Activity {
                 : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT));
         }
 
+        /** ⤢ Pantalla completa de un gráfico (como en YouTube): se gira sola en horizontal y esconde las barras del sistema.
+         *  Al salir vuelve a como estaba la noche (se puede girar con el móvil). */
+        @JavascriptInterface public void horizontal(boolean on) {
+            runOnUiThread(() -> {
+                setRequestedOrientation(on
+                    ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                    : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_FULL_USER);
+                if (Build.VERSION.SDK_INT >= 30) {
+                    android.view.WindowInsetsController c = getWindow().getInsetsController();
+                    if (c == null) return;
+                    if (on) {
+                        c.setSystemBarsBehavior(android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                        c.hide(android.view.WindowInsets.Type.systemBars());
+                    } else c.show(android.view.WindowInsets.Type.systemBars());
+                } else {
+                    getWindow().getDecorView().setSystemUiVisibility(on
+                        ? View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        : 0);
+                }
+            });
+        }
+
         // ---- Alarmas que suenan con la app cerrada (las programa el reloj de Android) ----
         /** La web manda su lista de alarmas: [{id, on, hora, tono, sub}] */
         @JavascriptInterface public void setAlarmas(String json) { Alarmas.guardar(MainActivity.this, json); }
