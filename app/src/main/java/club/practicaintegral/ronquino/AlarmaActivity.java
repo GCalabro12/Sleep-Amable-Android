@@ -37,11 +37,11 @@ import java.util.Random;
  * Pantalla completa «¡Buenos días!» cuando suena una alarma (también encima del bloqueo):
  * reloj grande arriba, botones para posponer 1, 3, 5 o 9 minutos o apagar, y la luna abajo
  * saludando y dando saltitos.
- * Prueba para apagar (Ajustes): «Apagar» abre una prueba (caminar 20 pasos, 3 cuentas o escanear el código guardado);
+ * Prueba para apagar (Ajustes): «Apagar» abre una prueba (caminar 30 pasos, 3 cuentas o escanear el código guardado);
  * mientras se hace, el volumen baja, y la alarma solo se apaga al terminarla.
  */
 public class AlarmaActivity extends Activity {
-    private static final int PASOS = 20, CUENTAS = 3;
+    private static final int PASOS = 30, CUENTAS = 3; // 4.7: 30 pasos (antes 20)
     private static WeakReference<AlarmaActivity> actual = new WeakReference<>(null);
     private final Handler h = new Handler(Looper.getMainLooper());
     private final Random rnd = new Random();
@@ -77,12 +77,16 @@ public class AlarmaActivity extends Activity {
         hola.setPadding(0, 0, 0, dp(24));
         col.addView(hola);
 
-        col.addView(texto("😴 Posponer", 0xFFC7D2FE, 17));
-        LinearLayout fila = new LinearLayout(this);
-        fila.setOrientation(LinearLayout.HORIZONTAL);
-        fila.setGravity(Gravity.CENTER);
-        for (int m : Alarmas.opcionesPosponer(this)) fila.addView(boton(m + " min", 0xFF312E81, 0xFFE0E7FF, 17, () -> pulsar("POSPONER", m), true)); // cada vez, menos
-        col.addView(fila, new LinearLayout.LayoutParams(-1, -2));
+        int[] ops = Alarmas.opcionesPosponer(this);
+        if (ops.length == 0) col.addView(texto("☀️ Ya has pospuesto 2 veces: ¡a levantarse!", 0xFFC7D2FE, 17)); // 4.7: sin «Posponer»
+        else {
+            col.addView(texto("😴 Posponer", 0xFFC7D2FE, 17));
+            LinearLayout fila = new LinearLayout(this);
+            fila.setOrientation(LinearLayout.HORIZONTAL);
+            fila.setGravity(Gravity.CENTER);
+            for (int m : ops) fila.addView(boton(m + " min", 0xFF312E81, 0xFFE0E7FF, 17, () -> pulsar("POSPONER", m), true)); // cada vez, menos
+            col.addView(fila, new LinearLayout.LayoutParams(-1, -2));
+        }
 
         boolean reforzada = !AlarmaService.retoActual.isEmpty();
         Button apagar = boton("☀️ Apagar", 0xFFFDE68A, 0xFF1E1B4B, 24,

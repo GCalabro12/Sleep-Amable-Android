@@ -88,13 +88,14 @@ public class Alarmas {
 
     /** «Posponer»: la misma alarma vuelve a sonar dentro de «min» minutos (1, 3, 5 o 9). */
     static void posponer(Context c, String tono, int sub, int min, String reto, String cod) {
-        int[] ops = opcionesPosponer(c); min = Math.min(Math.max(1, min), ops[ops.length - 1]); // nunca más de lo que toca
+        int[] ops = opcionesPosponer(c); if (ops.length == 0) return; // ya se pospuso 2 veces
+        min = Math.min(Math.max(1, min), ops[ops.length - 1]); // nunca más de lo que toca
         contarPospuesta(c);
         // al volver a sonar ya no sube despacio: si era progresiva, sube en 5 segundos
         programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, sub > 0 ? 5 : 0, reto, cod);
     }
 
-    // Cada vez que se pospone, menos tiempo: la 1.ª vez 1, 3, 5 o 9 min; la 2.ª, 1 o 3; después, solo 1
+    // Cada vez que se pospone, menos tiempo: la 1.ª vez 1, 3, 5 o 9 min; la 2.ª, 1 o 3; después, ya no se puede (a levantarse) (4.7)
     static int pospuestas(Context c) {
         SharedPreferences p = c.getSharedPreferences("pospuestas", Context.MODE_PRIVATE);
         return System.currentTimeMillis() - p.getLong("t", 0) < 2 * 3600_000L ? p.getInt("n", 0) : 0; // (de otra mañana no cuenta)
@@ -105,6 +106,6 @@ public class Alarmas {
     static void olvidarPospuestas(Context c) { c.getSharedPreferences("pospuestas", Context.MODE_PRIVATE).edit().clear().apply(); }
     static int[] opcionesPosponer(Context c) {
         int n = pospuestas(c);
-        return n == 0 ? new int[]{1, 3, 5, 9} : n == 1 ? new int[]{1, 3} : new int[]{1};
+        return n == 0 ? new int[]{1, 3, 5, 9} : n == 1 ? new int[]{1, 3} : new int[]{};
     }
 }

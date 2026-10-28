@@ -40,7 +40,9 @@ public class AlarmaService extends Service {
         String accion = intent != null ? intent.getAction() : null;
         if ("APAGAR".equals(accion)) { Alarmas.olvidarPospuestas(this); parar(); return START_NOT_STICKY; }
         if ("DISCRETO".equals(accion)) { discreto(); return START_NOT_STICKY; }
-        if ("POSPONER".equals(accion)) { Alarmas.posponer(this, tonoActual, subActual, intent.getIntExtra("min", 9), retoActual, codActual); parar(); return START_NOT_STICKY; }
+        if ("POSPONER".equals(accion)) { // tras posponer 2 veces ya no se puede: sigue sonando (4.7)
+            if (Alarmas.opcionesPosponer(this).length == 0) return START_NOT_STICKY;
+            Alarmas.posponer(this, tonoActual, subActual, intent.getIntExtra("min", 9), retoActual, codActual); parar(); return START_NOT_STICKY; }
 
         if (intent != null) {
             tonoActual = intent.getStringExtra("tono") != null ? intent.getStringExtra("tono") : "amanecer";
@@ -100,8 +102,8 @@ public class AlarmaService extends Service {
 
     /** Posponer siempre; «Apagar» desde el aviso solo si la alarma no es reforzada (si no, se apaga haciendo la prueba). */
     private void acciones(Notification.Builder nb) {
-        int[] ops = Alarmas.opcionesPosponer(this); int max = ops[ops.length - 1]; // 9, luego 3, luego 1
-        nb.addAction(new Notification.Action.Builder(null, "Posponer " + max + " min", accionPI("POSPONER", 3, max)).build());
+        int[] ops = Alarmas.opcionesPosponer(this); // 9, luego 3, luego nada
+        if (ops.length > 0) nb.addAction(new Notification.Action.Builder(null, "Posponer " + ops[ops.length - 1] + " min", accionPI("POSPONER", 3, ops[ops.length - 1])).build());
         if (retoActual.isEmpty()) nb.addAction(new Notification.Action.Builder(null, "Apagar", accionPI("APAGAR", 4, 0)).build());
     }
 
