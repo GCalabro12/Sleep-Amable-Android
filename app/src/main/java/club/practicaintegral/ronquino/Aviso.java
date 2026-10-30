@@ -17,6 +17,7 @@ final class Aviso {
     private static TextToSpeech tts;
     private static boolean listo;
     private static String pendiente;
+    private static float velPendiente = 1f; // velocidad de lo pendiente (texto libre)
     private static Context app;
     private static int volAntes = -1; // volumen que había antes de subirlo para el aviso
 
@@ -39,7 +40,7 @@ final class Aviso {
             tts.setAudioAttributes(new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
-            if (pendiente != null) { tts.speak(pendiente, TextToSpeech.QUEUE_FLUSH, null, "aviso"); pendiente = null; }
+            if (pendiente != null) { tts.setSpeechRate(velPendiente); tts.speak(pendiente, TextToSpeech.QUEUE_FLUSH, null, "aviso"); pendiente = null; velPendiente = 1f; }
         });
     }
 
@@ -81,6 +82,13 @@ final class Aviso {
         preparar(c);
         if (listo) { tts.setSpeechRate(1f); tts.setPitch(1f); tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "luna"); }
         else pendiente = texto;
+    }
+
+    /** Igual, a la velocidad elegida (1 normal, 0,8 lento, 0,6 muy lento): el «Texto libre» de los audios para dormir. */
+    static void hablarVel(Context c, String texto, float vel) {
+        preparar(c);
+        if (listo) { tts.setSpeechRate(vel); tts.setPitch(vel < 1f ? 0.95f : 1f); tts.speak(texto, TextToSpeech.QUEUE_FLUSH, null, "luna"); }
+        else { pendiente = texto; velPendiente = vel; }
     }
 
     static void callar() { if (tts != null) tts.stop(); pendiente = null; }

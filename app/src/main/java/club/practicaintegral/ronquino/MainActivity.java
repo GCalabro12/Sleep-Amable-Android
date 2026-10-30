@@ -450,6 +450,7 @@ public class MainActivity extends Activity {
         @JavascriptInterface public boolean decirDespacio(String texto) { return Aviso.decirDespacio(MainActivity.this, texto); }
         /** Voz del móvil para Luna (si la voz de Gemini no llega a tiempo). */
         @JavascriptInterface public void hablar(String texto) { runOnUiThread(() -> Aviso.hablar(MainActivity.this, texto)); }
+        @JavascriptInterface public void hablarVel(String texto, float vel) { runOnUiThread(() -> Aviso.hablarVel(MainActivity.this, texto, vel)); }
         @JavascriptInterface public void callar() { Aviso.callar(); }
         /** Abre los ajustes de voz de Android (motor y voz con que lee Luna). */
         @JavascriptInterface public void ajustesVoz() { abrir(new Intent("com.android.settings.TTS_SETTINGS")); }
