@@ -74,6 +74,7 @@ public class NocheService extends Service {
         escuchando = false;
         ruido = false;
         Modos.restaurar(this);
+        Tono.quitar();
         stopSelf();
     }
 

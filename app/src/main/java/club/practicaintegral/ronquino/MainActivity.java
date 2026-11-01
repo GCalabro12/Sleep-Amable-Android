@@ -239,6 +239,7 @@ public class MainActivity extends Activity {
             NocheService.actualizar(this);
             Modos.restaurar(this);
         }
+        Tono.quitar();
         super.onDestroy();
     }
 
@@ -442,6 +443,13 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> requestPermissions(new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 4));
         }
         @JavascriptInterface public void audioNormal() { Modos.audioNormal(MainActivity.this); }
+        /** 📡 Pitido del sonar por el altavoz del móvil, aunque haya un auricular conectado. */
+        @JavascriptInterface public boolean sonarTono(boolean on) {
+            if (on) return Tono.poner(MainActivity.this);
+            Tono.quitar();
+            return false;
+        }
+        @JavascriptInterface public boolean sonarAltavoz() { return Tono.enAltavoz(); }
 
         // ---------- Aviso de ronquido por los auriculares ----------
         @JavascriptInterface public boolean auriculares() { return Aviso.auriculares(MainActivity.this); }
