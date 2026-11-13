@@ -25,7 +25,8 @@ public class AlarmaReceiver extends BroadcastReceiver {
                 .putExtra("tono", i.getStringExtra("tono"))
                 .putExtra("sub", i.getIntExtra("sub", 120))
                 .putExtra("reto", i.getStringExtra("reto"))
-                .putExtra("cod", i.getStringExtra("cod"));
+                .putExtra("cod", i.getStringExtra("cod"))
+                .putExtra("codigo", i.getIntExtra("codigo", 0)); // 5.4: para «Apagar y desactivar»
         try { c.startForegroundService(s); } catch (RuntimeException ignored) {}
     }
 }

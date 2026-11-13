@@ -300,6 +300,9 @@ public class MainActivity extends Activity {
         // ---- Alarmas que suenan con la app cerrada (las programa el reloj de Android) ----
         /** La web manda su lista de alarmas: [{id, on, hora, tono, sub}] */
         @JavascriptInterface public void setAlarmas(String json) { Alarmas.guardar(MainActivity.this, json); }
+        // 5.4: idioma de la voz y de la pantalla de la alarma; y las alarmas que se apagaron con «Apagar y desactivar»
+        @JavascriptInterface public void ttsIdioma(String l) { Aviso.idioma(MainActivity.this, l); }
+        @JavascriptInterface public String alarmasDesactivadas() { return Alarmas.tomarDesactivadas(MainActivity.this); }
         /** Entrar con Google con el selector de cuentas de Android; el resultado llega a window.googleNativo(token, error). */
         @JavascriptInterface public void entrarGoogle(String clientId) {
             runOnUiThread(() -> Google.entrar(MainActivity.this, clientId, (token, error) ->

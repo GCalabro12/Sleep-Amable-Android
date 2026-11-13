@@ -49,6 +49,7 @@ public class AlarmaActivity extends Activity {
     private TextView reloj;
     private ImageView luna;
     private boolean aplaude;
+    private boolean desactivar; // 5.4: tras la prueba, apagar y desactivar
     // prueba de pasos
     private SensorManager sm;
     private SensorEventListener oyente;
@@ -73,14 +74,14 @@ public class AlarmaActivity extends Activity {
         reloj.setTextColor(0xFFF8FAFC); reloj.setTextSize(84); reloj.setGravity(Gravity.CENTER);
         col.addView(reloj);
 
-        TextView hola = texto("☀️ ¡Buenos días!", 0xFFFDE68A, 28);
-        hola.setPadding(0, 0, 0, dp(24));
+        TextView hola = texto(I18n.t(this, "☀️ ¡Buenos días!", "☀️ Good morning!", "☀️ Bom dia!"), 0xFFFDE68A, 28);
+        hola.setPadding(0, 0, 0, dp(18));
         col.addView(hola);
 
         int[] ops = Alarmas.opcionesPosponer(this);
-        if (ops.length == 0) col.addView(texto("☀️ Ya has pospuesto 2 veces: ¡a levantarse!", 0xFFC7D2FE, 17)); // 4.7: sin «Posponer»
+        if (ops.length == 0) col.addView(texto(I18n.t(this, "☀️ Ya has pospuesto 2 veces: ¡a levantarse!", "☀️ You've snoozed twice: time to get up!", "☀️ Você já adiou 2 vezes: hora de levantar!"), 0xFFC7D2FE, 17)); // 4.7: sin «Posponer»
         else {
-            col.addView(texto("😴 Posponer", 0xFFC7D2FE, 17));
+            col.addView(texto(I18n.t(this, "😴 Posponer", "😴 Snooze", "😴 Soneca"), 0xFFC7D2FE, 17));
             LinearLayout fila = new LinearLayout(this);
             fila.setOrientation(LinearLayout.HORIZONTAL);
             fila.setGravity(Gravity.CENTER);
@@ -89,15 +90,24 @@ public class AlarmaActivity extends Activity {
         }
 
         boolean reforzada = !AlarmaService.retoActual.isEmpty();
-        Button apagar = boton("☀️ Apagar", 0xFFFDE68A, 0xFF1E1B4B, 24,
-                () -> { if (reforzada) prueba(); else pulsar("APAGAR", 0); }, false);
+        Button apagar = boton(I18n.t(this, "☀️ Apagar", "☀️ Turn off", "☀️ Desligar"), 0xFFFDE68A, 0xFF1E1B4B, 24,
+                () -> { desactivar = false; if (reforzada) prueba(); else pulsar("APAGAR", 0); }, false);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(76));
         lp.setMargins(dp(8), dp(18), dp(8), 0);
         col.addView(apagar, lp);
         if (reforzada) {
-            TextView nota = texto("Para apagarla, " + queHacer(AlarmaService.retoActual), 0xFFC7D2FE, 15);
+            TextView nota = texto(I18n.t(this, "Para apagarla, ", "To turn it off, ", "Para desligar, ") + queHacer(AlarmaService.retoActual), 0xFFC7D2FE, 15);
             nota.setPadding(0, dp(8), 0, 0);
             col.addView(nota);
+        }
+        // 5.4: discreto, debajo: apagar y que ya no suene mañana (con reto, primero el reto). No en la siesta
+        int origen = getSharedPreferences("alarmas", MODE_PRIVATE).getInt("origen", 0);
+        if (origen != 0 && origen != Alarmas.ID_SIESTA) {
+            TextView des = texto(I18n.t(this, "🔕 Apagar y desactivar\nYa no sonará mañana", "🔕 Turn off and disable\nIt won't ring tomorrow", "🔕 Desligar e desativar\nNão vai tocar amanhã"), 0xFFA5B4FC, 15);
+            des.setPadding(dp(12), dp(14), dp(12), dp(6));
+            des.setAlpha(0.85f);
+            des.setOnClickListener(v -> { desactivar = true; if (reforzada) prueba(); else pulsar("DESACTIVAR", 0); });
+            col.addView(des);
         }
 
         // La luna, abajo del todo, ocupando el espacio que sobra
@@ -118,13 +128,16 @@ public class AlarmaActivity extends Activity {
 
     private static String queHacer(String reto) {
         switch (reto) {
-            case "pasos": return "camina " + PASOS + " pasos.";
-            case "codigo": return "escanea el código que guardaste.";
-            default: return "haz " + CUENTAS + " cuentas.";
+            case "pasos": return actual.get() == null ? "camina " + PASOS + " pasos." : I18n.t(actual.get(), "camina " + PASOS + " pasos.", "walk " + PASOS + " steps.", "ande " + PASOS + " passos.");
+            case "codigo": return actual.get() == null ? "escanea el código que guardaste." : I18n.t(actual.get(), "escanea el código que guardaste.", "scan the code you saved.", "escaneie o código que você salvou.");
+            default: return actual.get() == null ? "haz " + CUENTAS + " cuentas." : I18n.t(actual.get(), "haz " + CUENTAS + " cuentas.", "solve " + CUENTAS + " sums.", "faça " + CUENTAS + " contas.");
         }
     }
 
     // ---------- Alarma reforzada ----------
+    /** 5.4: el texto en el idioma elegido en la web */
+    private String tr(String es, String en, String pt) { return I18n.t(this, es, en, pt); }
+
     private void prueba() {
         String reto = AlarmaService.retoActual;
         if ("pasos".equals(reto) && acelerometro() == null) reto = "cuentas"; // móvil sin sensor de movimiento
@@ -142,14 +155,14 @@ public class AlarmaActivity extends Activity {
         TextView t = texto(titulo, 0xFFFDE68A, 26);
         t.setPadding(0, 0, 0, dp(6));
         col.addView(t);
-        col.addView(texto("🔉 El volumen baja mientras la haces", 0xFFC7D2FE, 15));
+        col.addView(texto(tr("🔉 El volumen baja mientras la haces", "🔉 The volume goes down while you do it", "🔉 O volume diminui enquanto você faz"), 0xFFC7D2FE, 15));
         return col;
     }
 
     private void volverAbajo(LinearLayout col) {
         View hueco = new View(this);
         col.addView(hueco, new LinearLayout.LayoutParams(-1, 0, 1f));
-        Button volver = boton("← Volver", 0xFF312E81, 0xFFE0E7FF, 18, () -> {
+        Button volver = boton(tr("← Volver", "← Back", "← Voltar"), 0xFF312E81, 0xFFE0E7FF, 18, () -> {
             pararPasos();
             setContentView(principal);
         }, false);
@@ -164,8 +177,8 @@ public class AlarmaActivity extends Activity {
 
     /** 🚶 Caminar: cada paso es un pico de la aceleración (por encima de la gravedad) separado del anterior. */
     private void pruebaPasos() {
-        LinearLayout col = pantallaPrueba("🚶 Camina " + PASOS + " pasos");
-        col.addView(texto("Con el móvil en la mano, levántate y anda.", 0xFFE2E8F0, 17));
+        LinearLayout col = pantallaPrueba(tr("🚶 Camina ", "🚶 Walk ", "🚶 Ande ") + PASOS + tr(" pasos", " steps", " passos"));
+        col.addView(texto(tr("Con el móvil en la mano, levántate y anda.", "Phone in hand, get up and walk.", "Com o celular na mão, levante e ande."), 0xFFE2E8F0, 17));
         TextView cuenta = texto("0 / " + PASOS, 0xFFF8FAFC, 72);
         cuenta.setPadding(0, dp(40), 0, 0);
         col.addView(cuenta);
@@ -196,7 +209,7 @@ public class AlarmaActivity extends Activity {
 
     /** 🧮 Cuentas: sumas, restas y multiplicaciones sencillas, con un teclado grande. */
     private void pruebaCuentas() {
-        LinearLayout col = pantallaPrueba("🧮 Haz " + CUENTAS + " cuentas");
+        LinearLayout col = pantallaPrueba(tr("🧮 Haz ", "🧮 Solve ", "🧮 Faça ") + CUENTAS + tr(" cuentas", " sums", " contas"));
         TextView num = texto("", 0xFFC7D2FE, 17);
         TextView pregunta = texto("", 0xFFF8FAFC, 44);
         pregunta.setPadding(0, dp(18), 0, dp(4));
@@ -212,7 +225,7 @@ public class AlarmaActivity extends Activity {
                 case 1: a = 40 + rnd.nextInt(59); b = 11 + rnd.nextInt(a - 20); op = " − "; estado[1] = a - b; break;
                 default: a = 3 + rnd.nextInt(7); b = 3 + rnd.nextInt(7); op = " × "; estado[1] = a * b; break;
             }
-            num.setText("Cuenta " + (estado[0] + 1) + " de " + CUENTAS);
+            num.setText(tr("Cuenta ", "Sum ", "Conta ") + (estado[0] + 1) + tr(" de ", " of ", " de ") + CUENTAS);
             pregunta.setText(a + op + b + " =");
             sb.setLength(0); respuesta.setText("?");
         };
@@ -233,7 +246,7 @@ public class AlarmaActivity extends Activity {
                         if (estado[0] >= CUENTAS) { hecho(); return; }
                         nueva.run(); return;
                     }
-                    aviso.setText("❌ No es correcto, prueba otra vez");
+                    aviso.setText(tr("❌ No es correcto, prueba otra vez", "❌ Not right, try again", "❌ Não está certo, tente de novo"));
                     sb.setLength(0);
                 } else if (sb.length() < 4) sb.append(k);
                 respuesta.setText(sb.length() == 0 ? "?" : sb.toString());
@@ -251,12 +264,12 @@ public class AlarmaActivity extends Activity {
 
     /** 📷 Código: hay que ir hasta el objeto guardado (la pasta de dientes, el café…) y escanearlo. */
     private void pruebaCodigo() {
-        LinearLayout col = pantallaPrueba("📷 Escanea tu código");
-        TextView info = texto("Ve hasta el objeto cuyo código guardaste y escanéalo.", 0xFFE2E8F0, 17);
+        LinearLayout col = pantallaPrueba(tr("📷 Escanea tu código", "📷 Scan your code", "📷 Escaneie seu código"));
+        TextView info = texto(tr("Ve hasta el objeto cuyo código guardaste y escanéalo.", "Go to the object whose code you saved and scan it.", "Vá até o objeto cujo código você salvou e escaneie."), 0xFFE2E8F0, 17);
         info.setPadding(0, dp(12), 0, dp(20));
         col.addView(info);
         TextView aviso = texto("", 0xFFFCA5A5, 17);
-        Button escanear = boton("📷 Escanear", 0xFFFDE68A, 0xFF1E1B4B, 24, () -> desbloquearYEscanear(aviso, col), false);
+        Button escanear = boton(tr("📷 Escanear", "📷 Scan", "📷 Escanear"), 0xFFFDE68A, 0xFF1E1B4B, 24, () -> desbloquearYEscanear(aviso, col), false);
         col.addView(escanear, new LinearLayout.LayoutParams(-1, dp(76)));
         aviso.setPadding(0, dp(14), 0, 0);
         col.addView(aviso);
@@ -270,7 +283,7 @@ public class AlarmaActivity extends Activity {
             // la cámara no se abre encima del bloqueo: primero hay que desbloquear el móvil
             km.requestDismissKeyguard(this, new KeyguardManager.KeyguardDismissCallback() {
                 @Override public void onDismissSucceeded() { escanear(aviso, col); }
-                @Override public void onDismissCancelled() { aviso.setText("Desbloquea el móvil para poder escanear."); }
+                @Override public void onDismissCancelled() { aviso.setText(tr("Desbloquea el móvil para poder escanear.", "Unlock your phone to scan.", "Desbloqueie o celular para escanear.")); }
             });
         } else escanear(aviso, col);
     }
@@ -281,7 +294,7 @@ public class AlarmaActivity extends Activity {
             GmsBarcodeScanning.getClient(this).startScan()
                     .addOnSuccessListener(b -> {
                         if (AlarmaService.codActual.equals(b.getRawValue())) hecho();
-                        else { AlarmaService.bajar(20); aviso.setText("❌ Ese no es el código que guardaste. Prueba otra vez."); }
+                        else { AlarmaService.bajar(20); aviso.setText(tr("❌ Ese no es el código que guardaste. Prueba otra vez.", "❌ That's not the code you saved. Try again.", "❌ Esse não é o código que você salvou. Tente de novo.")); }
                     })
                     .addOnCanceledListener(() -> AlarmaService.bajar(15))
                     .addOnFailureListener(e -> sinLector(aviso, col));
@@ -290,16 +303,17 @@ public class AlarmaActivity extends Activity {
 
     /** Si el lector de códigos no funciona en este móvil, la alarma no se queda sin poder apagar: cuentas. */
     private void sinLector(TextView aviso, LinearLayout col) {
-        aviso.setText("No se ha podido abrir el lector de códigos.");
-        Button cuentas = boton("🧮 Hacer las cuentas en su lugar", 0xFF312E81, 0xFFE0E7FF, 18, this::pruebaCuentas, false);
+        aviso.setText(tr("No se ha podido abrir el lector de códigos.", "The code scanner couldn't open.", "Não foi possível abrir o leitor de códigos."));
+        Button cuentas = boton(tr("🧮 Hacer las cuentas en su lugar", "🧮 Do the sums instead", "🧮 Fazer as contas no lugar"), 0xFF312E81, 0xFFE0E7FF, 18, this::pruebaCuentas, false);
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, dp(60));
         lp.topMargin = dp(10);
         col.addView(cuentas, col.getChildCount() - 2, lp);
     }
 
     private void hecho() {
-        Toast.makeText(this, "✅ ¡Muy bien! Alarma apagada", Toast.LENGTH_SHORT).show();
-        pulsar("APAGAR", 0);
+        Toast.makeText(this, desactivar ? I18n.t(this, "✅ ¡Muy bien! Alarma apagada y desactivada", "✅ Well done! Alarm off and disabled", "✅ Muito bem! Alarme desligado e desativado")
+                : I18n.t(this, "✅ ¡Muy bien! Alarma apagada", "✅ Well done! Alarm off", "✅ Muito bem! Alarme desligado"), Toast.LENGTH_SHORT).show();
+        pulsar(desactivar ? "DESACTIVAR" : "APAGAR", 0);
     }
 
     // ---------- Piezas ----------

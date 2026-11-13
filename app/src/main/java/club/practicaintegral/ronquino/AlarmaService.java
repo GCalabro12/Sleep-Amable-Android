@@ -39,6 +39,11 @@ public class AlarmaService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         String accion = intent != null ? intent.getAction() : null;
         if ("APAGAR".equals(accion)) { Alarmas.olvidarPospuestas(this); parar(); return START_NOT_STICKY; }
+        if ("DESACTIVAR".equals(accion)) { // 5.4: apagar y que ya no suene mañana
+            Alarmas.olvidarPospuestas(this);
+            int o = getSharedPreferences("alarmas", MODE_PRIVATE).getInt("origen", 0);
+            if (o != 0 && o != Alarmas.ID_SIESTA && o != Alarmas.ID_POSPUESTA) Alarmas.desactivar(this, o);
+            parar(); return START_NOT_STICKY; }
         if ("DISCRETO".equals(accion)) { discreto(); return START_NOT_STICKY; }
         if ("POSPONER".equals(accion)) { // tras posponer 2 veces ya no se puede: sigue sonando (4.7)
             if (Alarmas.opcionesPosponer(this).length == 0) return START_NOT_STICKY;
@@ -50,6 +55,8 @@ public class AlarmaService extends Service {
             retoActual = intent.getStringExtra("reto") != null ? intent.getStringExtra("reto") : "";
             codActual = intent.getStringExtra("cod") != null ? intent.getStringExtra("cod") : "";
             if ("codigo".equals(retoActual) && codActual.isEmpty()) retoActual = "cuentas";
+            int cod = intent.getIntExtra("codigo", 0); // 5.4: la alarma que suena (al posponer, sigue siendo la misma)
+            if (cod != 0 && cod != Alarmas.ID_POSPUESTA) getSharedPreferences("alarmas", MODE_PRIVATE).edit().putInt("origen", cod).apply();
             bajoHasta = 0;
         }
         NotificationManager nm = getSystemService(NotificationManager.class);
@@ -60,8 +67,8 @@ public class AlarmaService extends Service {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_NO_USER_ACTION), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Notification.Builder nb = new Notification.Builder(this, CANAL)
                 .setSmallIcon(R.drawable.ic_stat_luna)
-                .setContentTitle("☀️ ¡Buenos días!")
-                .setContentText("Amable Sleep · alarma")
+                .setContentTitle(I18n.t(this, "☀️ ¡Buenos días!", "☀️ Good morning!", "☀️ Bom dia!"))
+                .setContentText(I18n.t(this, "Amable Sleep · alarma", "Amable Sleep · alarm", "Amable Sleep · alarme"))
                 .setCategory(Notification.CATEGORY_ALARM)
                 .setFullScreenIntent(pantalla, true)
                 .setContentIntent(pantalla)
@@ -91,8 +98,8 @@ public class AlarmaService extends Service {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK), PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         Notification.Builder nb = new Notification.Builder(this, "alarma_baja")
                 .setSmallIcon(R.drawable.ic_stat_luna)
-                .setContentTitle("☀️ ¡Buenos días!")
-                .setContentText("Toca para ver la alarma")
+                .setContentTitle(I18n.t(this, "☀️ ¡Buenos días!", "☀️ Good morning!", "☀️ Bom dia!"))
+                .setContentText(I18n.t(this, "Toca para ver la alarma", "Tap to see the alarm", "Toque para ver o alarme"))
                 .setCategory(Notification.CATEGORY_ALARM)
                 .setContentIntent(pantalla)
                 .setOngoing(true);
@@ -103,8 +110,8 @@ public class AlarmaService extends Service {
     /** Posponer siempre; «Apagar» desde el aviso solo si la alarma no es reforzada (si no, se apaga haciendo la prueba). */
     private void acciones(Notification.Builder nb) {
         int[] ops = Alarmas.opcionesPosponer(this); // 9, luego 3, luego nada
-        if (ops.length > 0) nb.addAction(new Notification.Action.Builder(null, "Posponer " + ops[ops.length - 1] + " min", accionPI("POSPONER", 3, ops[ops.length - 1])).build());
-        if (retoActual.isEmpty()) nb.addAction(new Notification.Action.Builder(null, "Apagar", accionPI("APAGAR", 4, 0)).build());
+        if (ops.length > 0) nb.addAction(new Notification.Action.Builder(null, I18n.t(this, "Posponer ", "Snooze ", "Soneca ") + ops[ops.length - 1] + " min", accionPI("POSPONER", 3, ops[ops.length - 1])).build());
+        if (retoActual.isEmpty()) nb.addAction(new Notification.Action.Builder(null, I18n.t(this, "Apagar", "Turn off", "Desligar"), accionPI("APAGAR", 4, 0)).build());
     }
 
     private PendingIntent accionPI(String accion, int code, int min) {

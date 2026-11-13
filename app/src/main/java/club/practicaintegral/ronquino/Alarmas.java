@@ -86,6 +86,26 @@ public class Alarmas {
 
     static void cancelarSiesta(Context c) { cancelar(c, ID_SIESTA); }
 
+    /** 5.4: «Apagar y desactivar»: la alarma que sonó queda apagada (ya no suena mañana); la web se entera al abrir (tomarDesactivadas). */
+    static void desactivar(Context c, int codigo) {
+        try {
+            JSONArray a = new JSONArray(prefs(c).getString("lista", "[]"));
+            JSONArray d = new JSONArray(prefs(c).getString("desactivadas", "[]"));
+            for (int i = 0; i < a.length(); i++) {
+                JSONObject al = a.getJSONObject(i);
+                if (codigo(al) != codigo) continue;
+                al.put("on", false); cancelar(c, codigo); d.put(al.optLong("id"));
+            }
+            prefs(c).edit().putString("lista", a.toString()).putString("desactivadas", d.toString()).apply();
+        } catch (Exception ignored) {}
+    }
+
+    static String tomarDesactivadas(Context c) {
+        String d = prefs(c).getString("desactivadas", "[]");
+        prefs(c).edit().remove("desactivadas").apply();
+        return d;
+    }
+
     /** «Posponer»: la misma alarma vuelve a sonar dentro de «min» minutos (1, 3, 5 o 9). */
     static void posponer(Context c, String tono, int sub, int min, String reto, String cod) {
         int[] ops = opcionesPosponer(c); if (ops.length == 0) return; // ya se pospuso 2 veces

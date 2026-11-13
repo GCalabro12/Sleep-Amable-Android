@@ -30,8 +30,7 @@ final class Aviso {
         tts = new TextToSpeech(app, estado -> {
             listo = estado == TextToSpeech.SUCCESS;
             if (!listo) return;
-            tts.setLanguage(new Locale("es", "ES"));
-            mejorVoz();
+            ponerIdioma(); // 5.4: en el idioma elegido (es, en o pt)
             tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
                 @Override public void onStart(String id) {}
                 @Override public void onDone(String id) { if ("aviso".equals(id)) bajarVolumen(); }
@@ -44,15 +43,28 @@ final class Aviso {
         });
     }
 
-    /** De las voces en español del móvil, la de más calidad que no necesite internet (si no, la de más calidad). */
-    private static void mejorVoz() {
+    /** 5.4: cambia el idioma de la voz (lo llama la web al abrir: AND.ttsIdioma). */
+    static void idioma(Context c, String l) {
+        I18n.set(c, l);
+        if (tts != null && listo) ponerIdioma();
+    }
+
+    private static void ponerIdioma() {
+        String l = app != null ? I18n.lang(app) : "es";
+        tts.setLanguage(I18n.locale(l));
+        mejorVoz(l);
+    }
+
+    /** De las voces del móvil en ese idioma, la de más calidad que no necesite internet (si no, la de más calidad). */
+    private static void mejorVoz(String l) {
+        final String pais = I18n.locale(l).getCountry();
         try {
             android.speech.tts.Voice mejor = null;
             for (android.speech.tts.Voice v : tts.getVoices()) {
-                if (v.getLocale() == null || !"es".equals(v.getLocale().getLanguage())) continue;
+                if (v.getLocale() == null || !l.equals(v.getLocale().getLanguage())) continue;
                 if (v.getFeatures() != null && v.getFeatures().contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)) continue;
-                int puntos = v.getQuality() + (v.isNetworkConnectionRequired() ? -50 : 0) + ("ES".equals(v.getLocale().getCountry()) ? 20 : 0);
-                int puntosMejor = mejor == null ? Integer.MIN_VALUE : mejor.getQuality() + (mejor.isNetworkConnectionRequired() ? -50 : 0) + ("ES".equals(mejor.getLocale().getCountry()) ? 20 : 0);
+                int puntos = v.getQuality() + (v.isNetworkConnectionRequired() ? -50 : 0) + (pais.equals(v.getLocale().getCountry()) ? 20 : 0);
+                int puntosMejor = mejor == null ? Integer.MIN_VALUE : mejor.getQuality() + (mejor.isNetworkConnectionRequired() ? -50 : 0) + (pais.equals(mejor.getLocale().getCountry()) ? 20 : 0);
                 if (puntos > puntosMejor) mejor = v;
             }
             if (mejor != null) tts.setVoice(mejor);
