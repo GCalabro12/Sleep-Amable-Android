@@ -42,6 +42,8 @@ import java.util.Random;
  */
 public class AlarmaActivity extends Activity {
     private static final int PASOS = 30, CUENTAS = 3; // 4.7: 30 pasos (antes 20)
+    private TextView msgPosp;      // 5.5: «Alarma pospuesta X minutos hasta las HH:MM»
+    private boolean posponiendo;   // 5.5: ya se ha pospuesto: no se puede pulsar otra vez
     private static WeakReference<AlarmaActivity> actual = new WeakReference<>(null);
     private final Handler h = new Handler(Looper.getMainLooper());
     private final Random rnd = new Random();
@@ -88,6 +90,12 @@ public class AlarmaActivity extends Activity {
             for (int m : ops) fila.addView(boton(m + " min", 0xFF312E81, 0xFFE0E7FF, 17, () -> pulsar("POSPONER", m), true)); // cada vez, menos
             col.addView(fila, new LinearLayout.LayoutParams(-1, -2));
         }
+
+        // 5.5: el aviso de «Alarma pospuesta» sale justo debajo de los botones de posponer (oculto hasta pulsar)
+        msgPosp = texto("", 0xFFFDE68A, 22);
+        msgPosp.setPadding(dp(8), dp(18), dp(8), 0);
+        msgPosp.setVisibility(View.GONE);
+        col.addView(msgPosp);
 
         boolean reforzada = !AlarmaService.retoActual.isEmpty();
         Button apagar = boton(I18n.t(this, "☀️ Apagar", "☀️ Turn off", "☀️ Desligar"), 0xFFFDE68A, 0xFF1E1B4B, 24,
@@ -336,9 +344,29 @@ public class AlarmaActivity extends Activity {
     }
 
     private void pulsar(String accion, int min) {
+        if (posponiendo) return;
         pararPasos();
+        if ("POSPONER".equals(accion)) { posponerYVolver(min); return; }
         startService(new Intent(this, AlarmaService.class).setAction(accion).putExtra("min", min));
         finish();
+    }
+
+    /** 5.5: aviso de 5 segundos debajo de los botones (oculta lo demás) y luego se cierra: vuelve el monitoreo. */
+    private void posponerYVolver(int min) {
+        posponiendo = true;
+        startService(new Intent(this, AlarmaService.class).setAction("POSPONER").putExtra("min", min));
+        String hasta = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(System.currentTimeMillis() + min * 60_000L));
+        msgPosp.setText(I18n.t(this, "⏰ Alarma pospuesta " + min + " minutos", "⏰ Alarm snoozed " + min + " minutes", "⏰ Alarme adiado " + min + " minutos")
+                + "\n" + I18n.t(this, "hasta las " + hasta, "until " + hasta, "até as " + hasta));
+        boolean tras = false; // oculta Apagar, «Apagar y desactivar», la nota y la luna: solo queda el aviso
+        ViewGroup grupo = (ViewGroup) principal;
+        for (int i = 0; i < grupo.getChildCount(); i++) {
+            View v = grupo.getChildAt(i);
+            if (v == msgPosp) { tras = true; continue; }
+            if (tras) v.setVisibility(View.GONE);
+        }
+        msgPosp.setVisibility(View.VISIBLE);
+        h.postDelayed(this::finish, 5000);
     }
 
     private LinearLayout columna() {

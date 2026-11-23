@@ -115,7 +115,7 @@ public class Alarmas {
         programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, sub > 0 ? 5 : 0, reto, cod);
     }
 
-    // Cada vez que se pospone, menos tiempo: la 1.ª vez 1, 3, 5 o 9 min; la 2.ª, 1 o 3; después, ya no se puede (a levantarse) (4.7)
+    // Cada vez que se pospone: la 1.ª vez 5, 10, 15 o 30 min; la 2.ª, 5, 10 o 15; después, ya no se puede (a levantarse) (5.5)
     static int pospuestas(Context c) {
         SharedPreferences p = c.getSharedPreferences("pospuestas", Context.MODE_PRIVATE);
         return System.currentTimeMillis() - p.getLong("t", 0) < 2 * 3600_000L ? p.getInt("n", 0) : 0; // (de otra mañana no cuenta)
@@ -126,6 +126,6 @@ public class Alarmas {
     static void olvidarPospuestas(Context c) { c.getSharedPreferences("pospuestas", Context.MODE_PRIVATE).edit().clear().apply(); }
     static int[] opcionesPosponer(Context c) {
         int n = pospuestas(c);
-        return n == 0 ? new int[]{1, 3, 5, 9} : n == 1 ? new int[]{1, 3} : new int[]{};
+        return n == 0 ? new int[]{5, 10, 15, 30} : n == 1 ? new int[]{5, 10, 15} : new int[]{}; // 5.5: 5/10/15/30 la 1.ª; 5/10/15 la 2.ª; luego ya no
     }
 }

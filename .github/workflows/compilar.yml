@@ -36,6 +36,32 @@ jobs:
           VERSION_CODE: ${{ github.run_number }}
         run: gradle assembleRelease bundleRelease --no-daemon --stacktrace
 
+      - name: Compilar AAB (para Google Play)
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/clave.p12
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: gradle bundleRelease --no-daemon --stacktrace
+
+      - name: Guardar AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: SleepAmable-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+
+      - name: Compilar AAB (para Google Play)
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/clave.p12
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: gradle bundleRelease --no-daemon --stacktrace
+
+      - name: Guardar AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: SleepAmable-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+
       - name: Preparar APK
         run: |
           cp app/build/outputs/apk/release/app-release.apk SleepAmable.apk

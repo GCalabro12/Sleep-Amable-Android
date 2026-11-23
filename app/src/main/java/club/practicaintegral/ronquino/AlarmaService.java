@@ -23,6 +23,8 @@ import android.os.PowerManager;
 public class AlarmaService extends Service {
     private static final String CANAL = "alarma";
     static volatile boolean sonando;
+    /** 5.5: la última alarma se ha pospuesto (no apagado): la web sigue monitoreando. */
+    static volatile boolean pospuesta;
     static String tonoActual = "amanecer";
     static int subActual = 120;
     /** Alarma reforzada: la prueba para apagarla ("" = basta el botón) y el código de barras guardado. */
@@ -38,16 +40,16 @@ public class AlarmaService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String accion = intent != null ? intent.getAction() : null;
-        if ("APAGAR".equals(accion)) { Alarmas.olvidarPospuestas(this); parar(); return START_NOT_STICKY; }
+        if ("APAGAR".equals(accion)) { pospuesta = false; Alarmas.olvidarPospuestas(this); parar(); return START_NOT_STICKY; }
         if ("DESACTIVAR".equals(accion)) { // 5.4: apagar y que ya no suene mañana
-            Alarmas.olvidarPospuestas(this);
+            pospuesta = false; Alarmas.olvidarPospuestas(this);
             int o = getSharedPreferences("alarmas", MODE_PRIVATE).getInt("origen", 0);
             if (o != 0 && o != Alarmas.ID_SIESTA && o != Alarmas.ID_POSPUESTA) Alarmas.desactivar(this, o);
             parar(); return START_NOT_STICKY; }
         if ("DISCRETO".equals(accion)) { discreto(); return START_NOT_STICKY; }
         if ("POSPONER".equals(accion)) { // tras posponer 2 veces ya no se puede: sigue sonando (4.7)
             if (Alarmas.opcionesPosponer(this).length == 0) return START_NOT_STICKY;
-            Alarmas.posponer(this, tonoActual, subActual, intent.getIntExtra("min", 9), retoActual, codActual); parar(); return START_NOT_STICKY; }
+            pospuesta = true; Alarmas.posponer(this, tonoActual, subActual, intent.getIntExtra("min", 5), retoActual, codActual); parar(false); return START_NOT_STICKY; }
 
         if (intent != null) {
             tonoActual = intent.getStringExtra("tono") != null ? intent.getStringExtra("tono") : "amanecer";
@@ -58,6 +60,7 @@ public class AlarmaService extends Service {
             int cod = intent.getIntExtra("codigo", 0); // 5.4: la alarma que suena (al posponer, sigue siendo la misma)
             if (cod != 0 && cod != Alarmas.ID_POSPUESTA) getSharedPreferences("alarmas", MODE_PRIVATE).edit().putInt("origen", cod).apply();
             bajoHasta = 0;
+            pospuesta = false; // 5.5: una alarma nueva que suena (no un aplazamiento)
         }
         NotificationManager nm = getSystemService(NotificationManager.class);
         NotificationChannel ch = new NotificationChannel(CANAL, "Alarmas", NotificationManager.IMPORTANCE_HIGH);
@@ -109,8 +112,8 @@ public class AlarmaService extends Service {
 
     /** Posponer siempre; «Apagar» desde el aviso solo si la alarma no es reforzada (si no, se apaga haciendo la prueba). */
     private void acciones(Notification.Builder nb) {
-        int[] ops = Alarmas.opcionesPosponer(this); // 9, luego 3, luego nada
-        if (ops.length > 0) nb.addAction(new Notification.Action.Builder(null, I18n.t(this, "Posponer ", "Snooze ", "Soneca ") + ops[ops.length - 1] + " min", accionPI("POSPONER", 3, ops[ops.length - 1])).build());
+        int[] ops = Alarmas.opcionesPosponer(this); // 5.5: la primera opción (5 min); si ya se pospuso 2 veces, no sale
+        if (ops.length > 0) nb.addAction(new Notification.Action.Builder(null, I18n.t(this, "Posponer ", "Snooze ", "Soneca ") + ops[0] + " min", accionPI("POSPONER", 3, ops[0])).build());
         if (retoActual.isEmpty()) nb.addAction(new Notification.Action.Builder(null, I18n.t(this, "Apagar", "Turn off", "Desligar"), accionPI("APAGAR", 4, 0)).build());
     }
 
@@ -157,13 +160,16 @@ public class AlarmaService extends Service {
         }
     };
 
-    void parar() {
+    void parar() { parar(true); }
+
+    /** cerrarPantalla: false al posponer, para que la pantalla de la alarma muestre el aviso y se cierre sola. */
+    void parar(boolean cerrarPantalla) {
         h.removeCallbacks(subir);
         if (mp != null) { try { mp.stop(); } catch (IllegalStateException ignored) {} mp.release(); mp = null; }
         sonando = false;
         if (cpu != null && cpu.isHeld()) cpu.release();
         cpu = null;
-        AlarmaActivity.cerrar();
+        if (cerrarPantalla) AlarmaActivity.cerrar();
         stopForeground(true);
         stopSelf();
     }

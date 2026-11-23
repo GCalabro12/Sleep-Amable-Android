@@ -365,6 +365,10 @@ public class MainActivity extends Activity {
         @JavascriptInterface public double siesta(int min, String tono, int sub) { return Alarmas.siesta(MainActivity.this, min, tono, sub); }
         @JavascriptInterface public void cancelarSiesta() { Alarmas.cancelarSiesta(MainActivity.this); }
         @JavascriptInterface public boolean alarmaSonando() { return AlarmaService.sonando; }
+        /** 5.5: la última alarma se ha pospuesto (la noche sigue) y no apagado (la noche se termina). */
+        @JavascriptInterface public boolean alarmaPospuesta() { return AlarmaService.pospuesta; }
+        /** 5.5: la última alarma se ha pospuesto (la noche sigue) y no apagado (la noche se termina). */
+        @JavascriptInterface public boolean alarmaPospuesta() { return AlarmaService.pospuesta; }
         /** ¿Puede la alarma salir a pantalla completa aunque se esté usando el móvil? */
         @JavascriptInterface public boolean puedePantallaCompleta() {
             // Con «Mostrar encima de otras apps» la pantalla de la alarma ya se abre siempre (también con el móvil en uso);
