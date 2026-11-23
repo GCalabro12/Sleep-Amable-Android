@@ -29,6 +29,8 @@
 
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
     <uses-feature android:name="android.hardware.wifi" android:required="false" />
+    <!-- 5.6: la app sigue en vertical, pero sin exigirlo: así Play la deja instalar en tablets, Chromebooks y Android XR -->
+    <uses-feature android:name="android.hardware.screen.portrait" android:required="false" />
 
     <!-- La voz del aviso de ronquido (Android 11+ necesita poder ver el motor de voz) -->
     <queries>
