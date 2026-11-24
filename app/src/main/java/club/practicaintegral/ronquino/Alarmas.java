@@ -111,8 +111,8 @@ public class Alarmas {
         int[] ops = opcionesPosponer(c); if (ops.length == 0) return; // ya se pospuso 2 veces
         min = Math.min(Math.max(1, min), ops[ops.length - 1]); // nunca más de lo que toca
         contarPospuesta(c);
-        // al volver a sonar ya no sube despacio: si era progresiva, sube en 5 segundos
-        programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, sub > 0 ? 5 : 0, reto, cod);
+        // 5.6: al volver a sonar, siempre empieza flojito y sube en 30 segundos (antes 5 s: sonaba casi de golpe)
+        programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, 30, reto, cod);
     }
 
     // Cada vez que se pospone: la 1.ª vez 5, 10, 15 o 30 min; la 2.ª, 5, 10 o 15; después, ya no se puede (a levantarse) (5.5)

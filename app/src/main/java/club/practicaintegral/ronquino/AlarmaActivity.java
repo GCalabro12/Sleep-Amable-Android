@@ -357,7 +357,10 @@ public class AlarmaActivity extends Activity {
         posponiendo = true;
         startService(new Intent(this, AlarmaService.class).setAction("POSPONER").putExtra("min", min));
         String hasta = new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date(System.currentTimeMillis() + min * 60_000L));
-        msgPosp.setText(I18n.t(this, "⏰ Alarma pospuesta " + min + " minutos", "⏰ Alarm snoozed " + min + " minutes", "⏰ Alarme adiado " + min + " minutos")
+        msgPosp.setText(I18n.t(this, "⏰ Alarma pospuesta
+" + min + " minutos", "⏰ Alarm snoozed
+" + min + " minutes", "⏰ Alarme adiado
+" + min + " minutos")
                 + "\n" + I18n.t(this, "hasta las " + hasta, "until " + hasta, "até as " + hasta));
         boolean tras = false; // oculta Apagar, «Apagar y desactivar», la nota y la luna: solo queda el aviso
         ViewGroup grupo = (ViewGroup) principal;
