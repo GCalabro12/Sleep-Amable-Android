@@ -111,6 +111,8 @@ public class Alarmas {
         int[] ops = opcionesPosponer(c); if (ops.length == 0) return; // ya se pospuso 2 veces
         min = Math.min(Math.max(1, min), ops[ops.length - 1]); // nunca más de lo que toca
         contarPospuesta(c);
+        // 5.6: a qué hora vuelve a sonar, para que la web lo enseñe («Pospuesta: sonará a las 9:00»)
+        c.getSharedPreferences("pospuestas", Context.MODE_PRIVATE).edit().putLong("hasta", System.currentTimeMillis() + min * 60_000L).apply();
         // 5.6: al volver a sonar, siempre empieza flojito y sube en 30 segundos (antes 5 s: sonaba casi de golpe)
         programar(c, ID_POSPUESTA, System.currentTimeMillis() + min * 60_000L, tono, 30, reto, cod);
     }
