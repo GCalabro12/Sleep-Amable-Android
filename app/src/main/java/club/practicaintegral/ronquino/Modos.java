@@ -58,12 +58,35 @@ final class Modos {
         }
     }
 
+    /** 5.7: «No molestar» durante un rato (sección Alarmas): se pone ahora y se quita solo a la hora «cuando» (ms). */
+    static String dndHasta(Context c, long cuando) {
+        String r = ponerDnd(c);
+        if (!"ok".equals(r)) return r;
+        prefs(c).edit().putLong("finDnd", cuando).apply();
+        seguridad(c, true, cuando);
+        return "ok";
+    }
+    /** A qué hora (ms) se quita el «No molestar» con tiempo; 0 si no hay. */
+    static long finDnd(Context c) { long t = prefs(c).getLong("finDnd", 0); return t > System.currentTimeMillis() && dndActivo(c) ? t : 0; }
+    /** 5.7: al acabar el tiempo, si sigue el modo avión (Android no deja quitarlo), un aviso para quitarlo. */
+    static void avisoAvion(Context c) {
+        try {
+            if (android.provider.Settings.Global.getInt(c.getContentResolver(), android.provider.Settings.Global.AIRPLANE_MODE_ON, 0) == 0) return;
+            NotificationManager n = nm(c);
+            n.createNotificationChannel(new NotificationChannel("modos", "«No molestar» de la noche", NotificationManager.IMPORTANCE_LOW));
+            PendingIntent ab = PendingIntent.getActivity(c, 900014, new Intent(android.provider.Settings.ACTION_AIRPLANE_MODE_SETTINGS), PendingIntent.FLAG_IMMUTABLE);
+            n.notify(10, new Notification.Builder(c, "modos").setSmallIcon(R.drawable.ic_stat_luna)
+                    .setContentTitle("✈️ Ya pasó el tiempo de No molestar")
+                    .setContentText("El modo avión sigue puesto: toca para quitarlo.").setContentIntent(ab).setAutoCancel(true).build());
+        } catch (RuntimeException ignored) {}
+    }
+
     /** Deja «No molestar» como estaba antes de la noche. */
     static void quitarDnd(Context c) {
         SharedPreferences p = prefs(c);
         if (!p.contains(DND_PREVIO)) return;
         int previo = p.getInt(DND_PREVIO, NotificationManager.INTERRUPTION_FILTER_ALL);
-        p.edit().remove(DND_PREVIO).apply();
+        p.edit().remove(DND_PREVIO).remove("finDnd").apply();
         aviso(c, false);
         seguridad(c, false);
         try {
@@ -78,13 +101,13 @@ final class Modos {
      * Seguridad: si por lo que sea la noche no se termina (la app se cierra, el móvil se apaga…),
      * «No molestar» se quita solo a las 13 horas de ponerlo, para que no se pierdan llamadas.
      */
-    private static void seguridad(Context c, boolean on) {
+    private static void seguridad(Context c, boolean on) { seguridad(c, on, System.currentTimeMillis() + 13 * 3600_000L); }
+    private static void seguridad(Context c, boolean on, long cuando) {
         AlarmManager am = c.getSystemService(AlarmManager.class);
         PendingIntent pi = PendingIntent.getBroadcast(c, 900010, new Intent(c, AlarmaReceiver.class).setAction("SEGURIDAD"),
                 PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
         am.cancel(pi);
         if (!on) return;
-        long cuando = System.currentTimeMillis() + 13 * 3600_000L;
         try { am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cuando, pi); }
         catch (SecurityException e) { am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cuando, pi); }
     }

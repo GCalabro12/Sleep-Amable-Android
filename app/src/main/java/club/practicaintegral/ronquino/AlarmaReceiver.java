@@ -10,7 +10,9 @@ public class AlarmaReceiver extends BroadcastReceiver {
     public void onReceive(Context c, Intent i) {
         if ("QUITAR_DND".equals(i.getAction()) || "SEGURIDAD".equals(i.getAction())) {
             // Botón «Quitarlo ya» del aviso, o la seguridad de las 13 horas: «No molestar» y wifi como estaban
+            boolean seg = "SEGURIDAD".equals(i.getAction());
             Modos.restaurar(c);
+            if (seg) Modos.avisoAvion(c); // 5.7
             return;
         }
         if (!"SONAR".equals(i.getAction())) { // reinicio, actualización de la app o cambio de hora

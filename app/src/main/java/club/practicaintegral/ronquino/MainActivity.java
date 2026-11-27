@@ -404,6 +404,11 @@ public class MainActivity extends Activity {
             return "ok";
         }
 
+        /** 5.7: «No molestar» hasta la hora cuando (ms): se quita solo. Devuelve "ok", "sin-permiso" o "error". */
+        @JavascriptInterface public String dndHasta(double cuando) { return Modos.dndHasta(MainActivity.this, (long) cuando); }
+        /** 5.7: hora (ms) a la que se quita el «No molestar» con tiempo; 0 si no hay. */
+        @JavascriptInterface public double dndFin() { return Modos.finDnd(MainActivity.this); }
+
         /** Abre la pantalla de Android «Acceso a No molestar» (solo hace falta la primera vez). */
         @JavascriptInterface public void pedirDnd() {
             abrir(new Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS));
