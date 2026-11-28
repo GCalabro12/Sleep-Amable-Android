@@ -400,7 +400,7 @@ public class MainActivity extends Activity {
         /** Pone (true) o quita (false) «No molestar». Devuelve "ok", "sin-permiso" o "error". */
         @JavascriptInterface public String setDnd(boolean on) {
             if (on) return Modos.ponerDnd(MainActivity.this);
-            Modos.quitarDnd(MainActivity.this);
+            Modos.quitarDnd(MainActivity.this, true); // 5.9: «Quitarlo ya» lo quita siempre
             return "ok";
         }
 

@@ -82,9 +82,12 @@ final class Modos {
     }
 
     /** Deja «No molestar» como estaba antes de la noche. */
-    static void quitarDnd(Context c) {
+    static void quitarDnd(Context c) { quitarDnd(c, false); }
+
+    /** 5.9: «Quitarlo ya» de la pantalla: quita el «No molestar» aunque no lo pusiera la app. */
+    static void quitarDnd(Context c, boolean ya) {
         SharedPreferences p = prefs(c);
-        if (!p.contains(DND_PREVIO)) return;
+        if (!p.contains(DND_PREVIO) && !ya) return;
         int previo = p.getInt(DND_PREVIO, NotificationManager.INTERRUPTION_FILTER_ALL);
         p.edit().remove(DND_PREVIO).remove("finDnd").apply();
         aviso(c, false);
