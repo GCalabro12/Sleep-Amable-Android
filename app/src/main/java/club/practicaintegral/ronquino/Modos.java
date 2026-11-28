@@ -48,7 +48,7 @@ final class Modos {
             int ahora = n.getCurrentInterruptionFilter();
             if (!prefs(c).contains(DND_PREVIO)) prefs(c).edit().putInt(DND_PREVIO, ahora).apply();
             if (ahora == NotificationManager.INTERRUPTION_FILTER_ALL) {
-                n.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY);
+                n.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE); // 5.8: silencio total (ni llamadas ni las alarmas de otras apps); la nuestra lo quita al sonar (AlarmaReceiver)
                 aviso(c, true);
                 seguridad(c, true);
             }
@@ -124,7 +124,7 @@ final class Modos {
             n.notify(9, new Notification.Builder(c, "modos")
                     .setSmallIcon(R.drawable.ic_stat_luna)
                     .setContentTitle("🌙 «No molestar» puesto por Amable Sleep")
-                    .setContentText("Las llamadas no suenan. Se quita al terminar la noche.")
+                    .setContentText("Silencio total: ni llamadas ni otras alarmas. Tu despertador sí suena. Se quita al terminar.")
                     .setContentIntent(abrir)
                     .addAction(new Notification.Action.Builder(null, "Quitarlo ya", quitar).build())
                     .setOngoing(true)
